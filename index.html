@@ -24,8 +24,23 @@
                 <input class="form-control me-2" type="search" placeholder="i.e, Pasadena" aria-label="Search">
                 <button class="btn btn-outline-success" type="submit">Search</button>
             </form>
+            <hr>
+
+            <div class="card">
+                <ul id="history-search-list" class="list-group list-group-flush"></ul>
+            </div>
+        </div>
+
+        <div class="col-lg-9 current">
+            <div class="mt-3" id="current-weather"></div>
         </div>
     </div>
+
+    <div class="mt-4 col-md-12 forecast">
+        <h3 id="forecast-header" class="mt-3">Weather in Next 5 Days</h3>
+        <div id="forecast" class="row"></div>
+    </div>
+    
 </main>
 
 
