@@ -7,6 +7,7 @@ const searchList = document.querySelector("#search-history");
 const apiKey = "f2e26748fb648875d4055b62c1e10d37";
 
 let cities = [];
+
 //fetch current weather of the city, this can be the input or can be any selected city in the search history
 const fetchCurrent = async (city) => {
   try {
@@ -14,7 +15,11 @@ const fetchCurrent = async (city) => {
       `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`
     );
     const data = await response.json();
-    return data;
+    console.log(data);
+    //need lat and lon for forecast part
+    const lat = data.coord.lat;
+    const lon = data.coord.lon;
+    return { lat, lon, data };
   } catch (err) {
     console.error(err);
   }
@@ -30,25 +35,24 @@ const renderCurrent = (data) => {
   const feelLike = data.main.feels_like;
   const windSpeed = data.wind.speed;
   const humidity = data.main.humidity;
-  const icon = data.weather[0].icon;
+  const icon = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
 
   currentWeather.innerHTML = `
-    <h5 class="card-title">${city}</h5>
-    <p class="card-text">${date}</p>
-    <p class="card-text">${icon}</p>
-    <p class="card-text">${temp}</p>
-    <p class="card-text">${feelLike}</p>
-    <p class="card-text">${windSpeed}</p>
-    <p class="card-text">${humidity}</p>
+    <h3 class="card-title">${city}</h3>
+    <p class="card-text">Date: ${date}</p>
+    <img src="${icon}" alt="${data.weather[0].description}">
+    <h4 class="card-text">${data.weather[0].description}</h4>
+    <p class="card-text">Temperature: ${temp}</p>
+    <p class="card-text">Feels like: ${feelLike}</p>
+    <p class="card-text">WindSpeed: ${windSpeed}</p>
+    <p class="card-text">Humidity: ${humidity}</p>
   `;
 };
 
-const fetchForcast = async (event) => {
+const fetchForcast = async (lat, lon) => {
   try {
-    // event.preventDefault();
-    let city = cityEl.value;
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=imperial`
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
     );
 
     const data = await response.json();
@@ -67,7 +71,8 @@ const renderForcast = (data) => {
   const forecastHTML = forecastData
     .map((item) => {
       const date = new Date(item.dt * 1000).toLocaleDateString();
-      const icon = item.weather[0].icon;
+      const icon = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
+      const city = data.city.name;
       const temp = item.main.temp;
       const feelLike = item.main.feels_like;
       const humidity = item.main.humidity;
@@ -77,13 +82,14 @@ const renderForcast = (data) => {
     <div class="col-md-2">
       <div class="card">
         <div class="card-body">
-            <h5 class="card-title">${city}</h5>
-            <p class="card-text">${date}</p>
-            <p class="card-text">${icon}</p>
-            <p class="card-text">${temp}</p>
-            <p class="card-text">${feelLike}</p>
-            <p class="card-text">${windSpeed}</p>
-            <p class="card-text">${humidity}</p>
+            <h3 class="card-title">${city}</h3>
+            <p class="card-text">Date: ${date}</p>
+            <img src="${icon}" alt="${item.weather[0].description}">
+            <h4 class="card-text">${item.weather[0].description}</h4>
+            <p class="card-text">Temperature: ${temp}</p>
+            <p class="card-text">Feels like: ${feelLike}</p>
+            <p class="card-text">WindSpeed: ${windSpeed}</p>
+            <p class="card-text">Humidity: ${humidity}</p>
         </div>
       </div>
     </div>
@@ -100,14 +106,39 @@ const searchHistory = () => {
   // loop all the cities from the cities array, then return a button for each city. at the end, join them into one HTML block.
   const cityList = cities
     .map((city) => {
-      return `<button class="btn btn-outline-secondary w-100">${city}</button>`;
+      //for "/\b\w/g", / => start point of regex. \b => to find the begining boundary of each word. \w => matches any word caracter (upper, lower, digits, underscores)
+      //  "/"" before g => end the regular expression literal. g => check for everything globally.
+      // replace(regex first argu, arrow function that applies toUpperCase to all firstLetters)
+      return `<button class="btn btn-outline-secondary mt-1 w-100 bg-dark text-white">${city.replace(
+        /\b\w/g,
+        (firstLetter) => firstLetter.toUpperCase()
+      )}</button>`;
     })
     .join("");
   searchList.innerHTML = cityList;
+
+  //It would be nice to have a clear button which only appear when there is any value in the cities array.
+  if (cities.length > 0) {
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "Clear";
+    clearBtn.classList.add("btn", "btn-danger", "mt-3", "w-100");
+    searchList.appendChild(clearBtn);
+    clearBtn.addEventListener("click", clearHistory);
+  }
+};
+
+const clearHistory = () => {
+  cities = [];
+  localStorage.setItem("cities", JSON.stringify(cities));
+  //after clearing out the local storage. invoke searchHistory again to refresh the list.
+  searchHistory();
 };
 
 //when user searches a new city, push the new searched city to cities array. then store the array to localstorage.
 const saveCity = (city) => {
+  if (cities.includes(city)) {
+    return;
+  }
   cities.push(city);
   localStorage.setItem("cities", JSON.stringify(cities));
   searchHistory();
@@ -122,21 +153,23 @@ search.addEventListener("submit", async (event) => {
   }
   //now we have got the city, search it using fetchCurrent function.
   try {
-    const data = await fetchCurrent(city);
+    const { lat, lon, data } = await fetchCurrent(city);
     console.log("current" + data);
     renderCurrent(data);
     saveCity(city);
-  } catch (err) {
-    console.error(err);
-  }
 
-  //now, search forecast data
-  try {
-    const data = await fetchForcast(city);
-    console.log("forecast" + data);
-    renderForcast(data);
+    //now, search forecast data
+    try {
+      const forecastData = await fetchForcast(lat, lon);
+      console.log("forecast" + forecastData);
+      renderForcast(forecastData);
+    } catch (err) {
+      console.error(err);
+    }
+    cityEl.value = "";
   } catch (err) {
     console.error(err);
+    alert("Unable to gather weather data. Please try again!");
   }
 });
 
@@ -153,18 +186,17 @@ searchList.addEventListener("click", async (event) => {
 
   //now we have the city, time to get current and forecast data for the city.
   try {
-    const data = await fetchCurrent(city);
+    const { lat, lon, data } = await fetchCurrent(city);
     console.log("current" + data);
     renderCurrent(data);
     saveCity(city);
-  } catch (err) {
-    console.error(err);
-  }
 
-  try {
-    const data = await fetchForcast(city);
-    console.log("forecast" + data);
-    renderForcast(data);
+    try {
+      const forecastData = await fetchForcast(lat, lon);
+      renderForcast(forecastData);
+    } catch (err) {
+      console.error(err);
+    }
   } catch (err) {
     console.error(err);
   }
