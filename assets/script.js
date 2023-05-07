@@ -2,6 +2,7 @@ const cityEl = document.querySelector(".search");
 const search = document.querySelector(".searchForm");
 const currentWeather = document.querySelector("#current-weather");
 const forcastDiv = document.querySelector("#forecast");
+const searchList = document.querySelector("#search-history");
 
 const apiKey = "f2e26748fb648875d4055b62c1e10d37";
 
@@ -95,4 +96,46 @@ const renderForcast = (data) => {
 `;
 };
 
-search.addEventListener("submit", fetchForcast);
+const searchHistory = () => {
+  // loop all the cities from the cities array, then return a button for each city. at the end, join them into one HTML block.
+  const cityList = cities
+    .map((city) => {
+      return `<button class="btn btn-outline-secondary">${city}</button>`;
+    })
+    .join("");
+  searchList.innerHTML = cityList;
+};
+
+//when user searches a new city, push the new searched city to cities array. then store the array to localstorage.
+const saveCity = (city) => {
+  cities.push(city);
+  localStorage.setItem("cities", JSON.stringify(cities));
+  searchHistory();
+};
+
+search.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const city = cityEl.value;
+  if (!city) {
+    alert("Please put a city in the search bar");
+    return;
+  }
+  //now we have got the city, search it using fetchCurrent function.
+  try {
+    const data = await fetchCurrent(city);
+    console.log("current" + data);
+    renderCurrent(data);
+    saveCity(city);
+  } catch (err) {
+    console.error(err);
+  }
+
+  //now, search forecast data
+  try {
+    const data = await fetchForcast(city);
+    console.log("forecast" + data);
+    renderForcast(data);
+  } catch (err) {
+    console.error(err);
+  }
+});
