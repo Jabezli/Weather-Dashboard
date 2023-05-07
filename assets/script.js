@@ -45,7 +45,7 @@ const renderCurrent = (data) => {
 
 const fetchForcast = async (event) => {
   try {
-    event.preventDefault();
+    // event.preventDefault();
     let city = cityEl.value;
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=imperial`
@@ -100,7 +100,7 @@ const searchHistory = () => {
   // loop all the cities from the cities array, then return a button for each city. at the end, join them into one HTML block.
   const cityList = cities
     .map((city) => {
-      return `<button class="btn btn-outline-secondary">${city}</button>`;
+      return `<button class="btn btn-outline-secondary w-100">${city}</button>`;
     })
     .join("");
   searchList.innerHTML = cityList;
@@ -139,3 +139,40 @@ search.addEventListener("submit", async (event) => {
     console.error(err);
   }
 });
+
+//event listener for the searched cities
+
+searchList.addEventListener("click", async (event) => {
+  //instead of using foreach that adds an eventlistener to each button then iterate to determine which one was clicked. This is a better method.
+  const button = event.target.closest("button");
+  if (!button) {
+    return;
+  }
+  //obtain the content in the button element.
+  const city = button.textContent;
+
+  //now we have the city, time to get current and forecast data for the city.
+  try {
+    const data = await fetchCurrent(city);
+    console.log("current" + data);
+    renderCurrent(data);
+    saveCity(city);
+  } catch (err) {
+    console.error(err);
+  }
+
+  try {
+    const data = await fetchForcast(city);
+    console.log("forecast" + data);
+    renderForcast(data);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+//get stored cities from local storage when the app is opened.
+const storedCities = localStorage.getItem("cities");
+if (storedCities) {
+  cities = JSON.parse(storedCities);
+  searchHistory();
+}
