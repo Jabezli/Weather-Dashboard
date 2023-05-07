@@ -1,0 +1,9 @@
+html, body {
+    height: 100vh;
+  }
+  
+main.vh-100 {
+    height: calc(100vh - 72px); /* subtract the height of the header */
+   
+  }
+  

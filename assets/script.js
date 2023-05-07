@@ -79,9 +79,8 @@ const renderForcast = (data) => {
       const windSpeed = item.wind.speed;
 
       return `
-    <div class="col-md-2">
-      <div class="card">
-        <div class="card-body">
+    <div class="card col-md-2">
+        <div class="card-body text-center">
             <h3 class="card-title">${city}</h3>
             <p class="card-text">Date: ${date}</p>
             <img src="${icon}" alt="${item.weather[0].description}">
@@ -91,20 +90,21 @@ const renderForcast = (data) => {
             <p class="card-text">WindSpeed: ${windSpeed}</p>
             <p class="card-text">Humidity: ${humidity}</p>
         </div>
-      </div>
     </div>
   `;
     })
     .join("");
 
   forecast.innerHTML = `
-  <div class="row">${forecastHTML}</div>
+  <div class="d-flex justify-content-evenly w-100">${forecastHTML}</div>
 `;
 };
 
 const searchHistory = () => {
+  const uniqueCities = [...new Set(cities)];
   // loop all the cities from the cities array, then return a button for each city. at the end, join them into one HTML block.
-  const cityList = cities
+  console.log(uniqueCities);
+  const cityList = uniqueCities
     .map((city) => {
       //for "/\b\w/g", / => start point of regex. \b => to find the begining boundary of each word. \w => matches any word caracter (upper, lower, digits, underscores)
       //  "/"" before g => end the regular expression literal. g => check for everything globally.
@@ -121,7 +121,7 @@ const searchHistory = () => {
   if (cities.length > 0) {
     const clearBtn = document.createElement("button");
     clearBtn.textContent = "Clear";
-    clearBtn.classList.add("btn", "btn-danger", "mt-3", "w-100");
+    clearBtn.classList.add("btn", "btn-danger", "mt-3", "w-100", "clearBtn");
     searchList.appendChild(clearBtn);
     clearBtn.addEventListener("click", clearHistory);
   }
@@ -136,10 +136,11 @@ const clearHistory = () => {
 
 //when user searches a new city, push the new searched city to cities array. then store the array to localstorage.
 const saveCity = (city) => {
-  if (cities.includes(city)) {
+  const trimmedCity = city.trim().toLowerCase();
+  if (cities.includes(trimmedCity)) {
     return;
   }
-  cities.push(city);
+  cities.push(trimmedCity);
   localStorage.setItem("cities", JSON.stringify(cities));
   searchHistory();
 };
@@ -179,6 +180,10 @@ searchList.addEventListener("click", async (event) => {
   //instead of using foreach that adds an eventlistener to each button then iterate to determine which one was clicked. This is a better method.
   const button = event.target.closest("button");
   if (!button) {
+    return;
+  }
+  //if the button is the clear button, dont do any new fetch.
+  if (button.classList.contains("clearBtn")) {
     return;
   }
   //obtain the content in the button element.
