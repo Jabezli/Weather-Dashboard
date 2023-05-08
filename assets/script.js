@@ -12,7 +12,7 @@ let cities = [];
 const fetchCurrent = async (city) => {
   try {
     const response = await fetch(
-      `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`
     );
     const data = await response.json();
     console.log(data);
