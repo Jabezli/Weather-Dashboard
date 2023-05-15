@@ -79,7 +79,7 @@ const renderForcast = (data) => {
       const windSpeed = item.wind.speed;
 
       return `
-    <div class="card col-md-2">
+    <div class="card col-md-2 col-lg-2 mb-3 px-0">
         <div class="card-body text-center">
             <h3 class="card-title">${city}</h3>
             <p class="card-text">Date: ${date}</p>
@@ -96,7 +96,7 @@ const renderForcast = (data) => {
     .join("");
 
   forecast.innerHTML = `
-  <div class="d-flex justify-content-evenly w-100">${forecastHTML}</div>
+  <div class="row w-100 justify-content-evenly align-items-center">${forecastHTML}</div>
 `;
 };
 
